@@ -1,22 +1,28 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const timeago = require('timeago.js'); // ✅ Fix
+const { format } = require('timeago.js'); // ✅ timeago for human-readable timestamps
 
+// ✅ Announcement schema with batch
 const announcementSchema = new mongoose.Schema({
   title: { type: String, required: true },
   message: { type: String, required: true },
+  batch: { type: String, required: true }, // batch field
   createdAt: { type: Date, default: Date.now }
 });
 
 const Announcement = mongoose.models.Announcement || mongoose.model('Announcement', announcementSchema);
 
-// ✅ Add announcement
+// ✅ Add a new announcement
 router.post('/', async (req, res) => {
   try {
-    const { title, message } = req.body;
+    const { title, message, batch } = req.body;
 
-    const newAnnouncement = new Announcement({ title, message });
+    if (!title || !message || !batch) {
+      return res.status(400).json({ message: 'Title, message, and batch are required' });
+    }
+
+    const newAnnouncement = new Announcement({ title, message, batch });
     await newAnnouncement.save();
 
     res.status(201).json({ message: '✅ Announcement added successfully' });
@@ -26,17 +32,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ Get announcements
+// ✅ Get announcements for a specific batch
 router.get('/', async (req, res) => {
   try {
-    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    const { batch } = req.query; // frontend should send ?batch=<batchName>
+    if (!batch) {
+      return res.status(400).json({ message: 'Batch is required' });
+    }
 
+    // Get announcements only for this batch
+    const announcements = await Announcement.find({ batch }).sort({ createdAt: -1 });
+
+    // Enrich with timeago
     const enriched = announcements.map(ann => ({
-  title: ann.title,
-  message: ann.message,
-  createdAt: ann.createdAt  // ✅ Send raw timestamp
-}));
-
+      title: ann.title,
+      message: ann.message,
+      createdAt: ann.createdAt,
+      timeAgo: format(ann.createdAt) // human-friendly
+    }));
 
     res.status(200).json(enriched);
   } catch (err) {
