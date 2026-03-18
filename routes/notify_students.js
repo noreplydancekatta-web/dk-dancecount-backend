@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const nodemailer = require("nodemailer");
-const Batch = require("../models/Batch"); // adjust model name if different
+const { Batch } = require("./Batch");
+
 
 const transporter = nodemailer.createTransport({
   service: "gmail",

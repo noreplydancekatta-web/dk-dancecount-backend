@@ -3,7 +3,7 @@ const router = require('express').Router();
 const nodemailer = require('nodemailer'); // ✅ required to send email
 
 // Force-clear Mongoose model cache
-delete mongoose.connection.models.Batch;
+// delete mongoose.connection.models.Batch;
 
 // Schema
 const batchSchema = new mongoose.Schema({
@@ -27,7 +27,9 @@ const batchSchema = new mongoose.Schema({
   versionKey: false
 });
 
-const Batch = mongoose.model('Batch', batchSchema);
+// const Batch = mongoose.model('Batch', batchSchema);
+const Batch = mongoose.models.Batch || mongoose.model('Batch', batchSchema);
+
 
 // ✅ GET: All batches with optional search
 router.get('/batches', async (req, res) => {
@@ -143,3 +145,4 @@ router.post('/getbyid', async (req, res) => {
 });
 
 module.exports = router;
+module.exports.Batch = Batch;
