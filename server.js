@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
-import reportsRouter from "./routes/reports.js";
+const reportsRouter = require('./routes/reports');
 const studioRoutes = require('./routes/studioRoutes');
 const announcementRoutes = require('./routes/announcement');
 const batchRoutes = require('./routes/batch_list');
