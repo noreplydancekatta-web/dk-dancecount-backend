@@ -5,7 +5,6 @@ const router = express.Router();
 const Student = mongoose.models.Student || mongoose.model('Student', new mongoose.Schema({
   firstName: String,
   lastName: String,
-  email: String,
   imageUrl: String,
 }, { collection: 'users' }));
 

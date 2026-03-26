@@ -7,7 +7,6 @@ const reportsRouter = require('./routes/reports');
 const studioRoutes = require('./routes/studioRoutes');
 const announcementRoutes = require('./routes/announcement');
 const batchRoutes = require('./routes/batch_list');
-const notifyRoutes = require("./routes/notifyRoutes");
 
 const app = express();
 app.use(cors());
@@ -24,7 +23,6 @@ app.use('/api/studios', studioRoutes);
 app.use("/api/reports", reportsRouter);
 app.use('/announcements', announcementRoutes);
 app.use('/api/batches', batchRoutes);
-app.use("/api", notifyRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 5000;

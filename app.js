@@ -26,7 +26,6 @@ const updateBranchRoute = require('./routes/update_branch');
 const deleteBranchRoute = require('./routes/delete_branch');
 //const reportsRoutes = require('./routes/reports');
 const studentRoutes = require('./routes/students');
-const notifyRoutes = require("./routes/notifyRoutes");
 
 const app = express();
 app.use(cors());
@@ -69,7 +68,6 @@ app.use('/api/branch', deleteBranchRoute);
 //app.use('/api/reports', reportsRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/batchdetails', batchDetailsRoute);
-app.use("/api", notifyRoutes);
 
 // ✅ Start Server
 app.listen(PORT, () => {
