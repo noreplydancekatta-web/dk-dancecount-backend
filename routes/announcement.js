@@ -2,6 +2,27 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
+const Transaction = mongoose.models.Transaction || mongoose.model('Transaction',
+  new mongoose.Schema(
+    { studentId: mongoose.Schema.Types.ObjectId, batchId: mongoose.Schema.Types.ObjectId },
+    { timestamps: true, collection: 'transactions' }
+  )
+);
+
+const DCUser = mongoose.models.DCUser || mongoose.model('DCUser',
+  new mongoose.Schema(
+    { enrolled_batches: [{ type: mongoose.Schema.Types.ObjectId }] },
+    { collection: 'users' }
+  )
+);
+
+const DCBatch = mongoose.models.DCBatch || mongoose.model('DCBatch',
+  new mongoose.Schema(
+    { studioId: mongoose.Schema.Types.ObjectId },
+    { collection: 'batches' }
+  )
+);
+
 /* ===============================
    Announcement Schema
 ================================ */
@@ -110,6 +131,64 @@ router.get("/", async (req, res) => {
 
   }
 
+});
+
+
+/* ===============================
+   Get All Announcements For Student
+   Across all enrolled batches, filtered by enrollment date
+================================ */
+router.get("/student/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await DCUser.findById(userId).lean();
+    if (!user || !user.enrolled_batches?.length) return res.status(200).json([]);
+
+    const transactions = await Transaction.find({ studentId: userId }).lean();
+
+    // Build map: batchId -> earliest enrollment date
+    const enrolledAtMap = {};
+    for (const txn of transactions) {
+      const batchId = txn.batchId?.toString();
+      if (!batchId) continue;
+      const txnDate = new Date(txn.createdAt || 0);
+      if (!enrolledAtMap[batchId] || txnDate < enrolledAtMap[batchId]) {
+        enrolledAtMap[batchId] = txnDate;
+      }
+    }
+
+    const batches = await DCBatch.find({ _id: { $in: user.enrolled_batches } }).lean();
+
+    const results = await Promise.all(
+      batches.map(async (batch) => {
+        const batchId = batch._id.toString();
+        const enrolledAt = enrolledAtMap[batchId];
+        if (!enrolledAt) return [];
+
+        return Announcement.find({
+          studioId: batch.studioId?.toString(),
+          $or: [{ batchId: null }, { batchId: batchId }],
+          createdAt: { $gte: enrolledAt },
+        }).sort({ createdAt: -1 }).lean();
+      })
+    );
+
+    const seen = new Set();
+    const unique = results.flat().filter(a => {
+      const key = a._id.toString();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    unique.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.status(200).json(unique);
+
+  } catch (error) {
+    console.error("❌ Error fetching student announcements:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch announcements" });
+  }
 });
 
 
